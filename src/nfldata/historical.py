@@ -37,9 +37,9 @@ def team_stats(connection, include_preseason=False):
     ]
     sum_columns_sql = ', '.join('sum({0}) AS {0}'.format(column) for column in sum_columns)
     team_sums = pd.read_sql_query(
-        """SELECT play_player.gsis_id, team, {}
+        """SELECT gsis_id, team, {}
             FROM play_player
-            GROUP BY play_player.gsis_id, team
+            GROUP BY gsis_id, team
         """.format(sum_columns_sql),
         connection,
         index_col=['gsis_id', 'team'],
