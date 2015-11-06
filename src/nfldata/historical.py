@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 
 
-def player_stats(connection):
+def player_stats_by_game(connection):
     sum_columns = [
         'fumbles_lost',
         'kicking_fga',
@@ -39,7 +39,7 @@ def player_stats(connection):
     return pd.read_sql_query(query, connection, index_col=['gsis_id', 'player_id']).sort_index()
 
 
-def team_stats(connection, include_preseason=False):
+def team_stats_by_game(connection, include_preseason=False):
     sum_columns = [
         'rushing_att',
         'rushing_yds',
