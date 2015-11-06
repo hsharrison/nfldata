@@ -39,7 +39,7 @@ special_team_stat_columns = [
 ]
 
 
-def player_stats_by_game(connection):
+def player_stats_by_game(connection, include_preseason=False):
     sum_columns = [
         'fumbles_lost',
         'kicking_fga',
@@ -79,9 +79,15 @@ def player_stats_by_game(connection):
       SELECT player_id, position, team, gsis_id, {}
       FROM play_player
       INNER JOIN player USING(team, player_id)
+      {}
       WHERE position IN %(positions)s
+      {}
       GROUP BY player_id, position, team, gsis_id
-    """.format(', '.join(_sum_query(col) for col in sum_columns))
+    """.format(
+        ', '.join(_sum_query(col) for col in sum_columns),
+        '' if include_preseason else 'INNER JOIN game USING(gsis_id)',
+        '' if include_preseason else "AND season_type != 'Preseason'",
+    )
     return pd.read_sql_query(
         query, connection,
         params=dict(positions=tuple(positions)),
@@ -89,14 +95,21 @@ def player_stats_by_game(connection):
     ).sort_index()
 
 
-def team_stats_by_drive(connection):
+def team_stats_by_drive(connection, include_preseason=False):
     sum_columns_sql = ', '.join(_sum_query(col) for col in offense_team_stat_columns)
     return pd.read_sql_query(
         """SELECT gsis_id, pos_team AS team, drive_id, result, {}
             FROM drive
             INNER JOIN agg_play USING(gsis_id, drive_id)
+            {}
             GROUP BY gsis_id, pos_team, drive_id, result
-        """.format(sum_columns_sql),
+        """.format(
+            sum_columns_sql,
+            '' if include_preseason else """
+            INNER JOIN game USING(gsis_id)
+            WHERE season_type != 'Preseason'
+            """
+        ),
         connection,
         index_col=['gsis_id', 'team', 'drive_id'],
     ).sort_index()
