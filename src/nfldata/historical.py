@@ -3,6 +3,42 @@ import numpy as np
 import pandas as pd
 
 
+def player_stats(connection):
+    sum_columns = [
+        'fumbles_lost',
+        'kicking_fga',
+        'kicking_fgm',
+        'kicking_xpa',
+        'kicking_xpmade',
+        'kickret_tds',
+        'passing_att',
+        'passing_cmp',
+        'passing_incmp',
+        'passing_int',
+        'passing_sk',
+        'passing_tds',
+        'passing_twoptm',
+        'passing_yds',
+        'puntret_tds',
+        'receiving_rec',
+        'receiving_tar',
+        'receiving_tds',
+        'receiving_twoptm',
+        'receiving_yds',
+        'rushing_att',
+        'rushing_tds',
+        'rushing_twoptm',
+        'rushing_yds',
+    ]
+    query = """
+      SELECT player_id, position, team, gsis_id, {}
+      FROM play_player
+      INNER JOIN player USING(team, player_id)
+      GROUP BY player_id, position, team, gsis_id
+    """.format(', '.join('sum({0}) AS {0}'.format(col) for col in sum_columns))
+    return pd.read_sql_query(query, connection, index_col=['gsis_id', 'player_id']).sort_index()
+
+
 def team_stats(connection, include_preseason=False):
     sum_columns = [
         'rushing_att',
