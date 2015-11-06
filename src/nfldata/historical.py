@@ -2,6 +2,42 @@ from toolz import curry
 import numpy as np
 import pandas as pd
 
+offense_team_stat_columns = [
+    'rushing_att',
+    'rushing_yds',
+    'rushing_tds',
+    'rushing_twoptm',
+    'fumbles_lost',
+    'passing_att',
+    'passing_cmp',
+    'passing_incmp',
+    'passing_int',
+    'passing_sk',
+    'passing_yds',
+    'passing_tds',
+    'passing_twoptm',
+    'kicking_xpa',
+    'kicking_xpmade',
+    'kicking_fga',
+    'kicking_fgmissed',
+    'kicking_fgm',
+]
+defense_team_stat_columns = [
+    'defense_int',
+    'defense_int_tds',
+    'defense_frec',
+    'defense_frec_tds',
+    'defense_misc_tds',
+    'defense_puntblk',
+    'defense_fgblk',
+    'defense_safe',
+    'defense_sk',
+]
+special_team_stat_columns = [
+    'kickret_tds',
+    'puntret_tds',
+]
+
 
 def player_stats_by_game(connection):
     sum_columns = [
@@ -45,7 +81,7 @@ def player_stats_by_game(connection):
       INNER JOIN player USING(team, player_id)
       WHERE position IN %(positions)s
       GROUP BY player_id, position, team, gsis_id
-    """.format(', '.join('sum({0}) AS {0}'.format(col) for col in sum_columns))
+    """.format(', '.join(_sum_query(col) for col in sum_columns))
     return pd.read_sql_query(
         query, connection,
         params=dict(positions=tuple(positions)),
@@ -53,39 +89,22 @@ def player_stats_by_game(connection):
     ).sort_index()
 
 
+def team_stats_by_drive(connection):
+    sum_columns_sql = ', '.join(_sum_query(col) for col in offense_team_stat_columns)
+    return pd.read_sql_query(
+        """SELECT gsis_id, pos_team AS team, drive_id, result, {}
+            FROM drive
+            INNER JOIN agg_play USING(gsis_id, drive_id)
+            GROUP BY gsis_id, pos_team, drive_id, result
+        """.format(sum_columns_sql),
+        connection,
+        index_col=['gsis_id', 'team', 'drive_id'],
+    ).sort_index()
+
+
 def team_stats_by_game(connection, include_preseason=False):
-    sum_columns = [
-        'rushing_att',
-        'rushing_yds',
-        'rushing_tds',
-        'rushing_twoptm',
-        'fumbles_lost',
-        'passing_att',
-        'passing_cmp',
-        'passing_incmp',
-        'passing_int',
-        'passing_sk',
-        'passing_yds',
-        'passing_tds',
-        'passing_twoptm',
-        'defense_int',
-        'defense_int_tds',
-        'defense_frec',
-        'defense_frec_tds',
-        'defense_misc_tds',
-        'defense_puntblk',
-        'defense_fgblk',
-        'kicking_xpa',
-        'kicking_xpmade',
-        'kicking_fga',
-        'kicking_fgmissed',
-        'kicking_fgm',
-        'kickret_tds',
-        'puntret_tds',
-        'defense_safe',
-        'defense_sk',
-    ]
-    sum_columns_sql = ', '.join('sum({0}) AS {0}'.format(column) for column in sum_columns)
+    team_stat_columns = offense_team_stat_columns + defense_team_stat_columns + special_team_stat_columns
+    sum_columns_sql = ', '.join(_sum_query(column) for column in team_stat_columns)
     team_sums = pd.read_sql_query(
         """SELECT gsis_id, team, {}
             FROM play_player
@@ -138,6 +157,10 @@ def team_stats_by_game(connection, include_preseason=False):
     )
 
     return game_data
+
+
+def _sum_query(col):
+    return 'sum({0}) AS {0}'.format(col)
 
 
 @curry
