@@ -76,13 +76,13 @@ def player_stats_by_game(connection, include_preseason=False):
         'UNK',
     ]
     query = """
-      SELECT player_id, position, team, gsis_id, {}
+      SELECT player_id, position, play_player.team, gsis_id, {}
       FROM play_player
-      INNER JOIN player USING(team, player_id)
+      INNER JOIN player USING(player_id)
       {}
       WHERE position IN %(positions)s
       {}
-      GROUP BY player_id, position, team, gsis_id
+      GROUP BY player_id, position, play_player.team, gsis_id
     """.format(
         ', '.join(_sum_query(col) for col in sum_columns),
         '' if include_preseason else 'INNER JOIN game USING(gsis_id)',
