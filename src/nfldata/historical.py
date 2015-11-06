@@ -30,13 +30,27 @@ def player_stats_by_game(connection):
         'rushing_twoptm',
         'rushing_yds',
     ]
+    positions = [
+        'FB',
+        'K',
+        'QB',
+        'RB',
+        'TE',
+        'WR',
+        'UNK',
+    ]
     query = """
       SELECT player_id, position, team, gsis_id, {}
       FROM play_player
       INNER JOIN player USING(team, player_id)
+      WHERE position IN %(positions)s
       GROUP BY player_id, position, team, gsis_id
     """.format(', '.join('sum({0}) AS {0}'.format(col) for col in sum_columns))
-    return pd.read_sql_query(query, connection, index_col=['gsis_id', 'player_id']).sort_index()
+    return pd.read_sql_query(
+        query, connection,
+        params=dict(positions=tuple(positions)),
+        index_col=['gsis_id', 'player_id'],
+    ).sort_index()
 
 
 def team_stats_by_game(connection, include_preseason=False):
