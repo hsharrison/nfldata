@@ -2,6 +2,9 @@ from toolz import curry
 import numpy as np
 import pandas as pd
 
+from nfldata.common import process_time_col
+from nfldata.lookup import score_before_time
+
 offense_team_stat_columns = [
     'rushing_att',
     'rushing_yds',
@@ -125,28 +128,22 @@ def team_stats_by_drive(connection, include_preseason=False):
         drive.loc[~drive[col].isnull(), col] = _de_parenthesize(drive.loc[~drive[col].isnull(), col])
 
     for time_type in ['start', 'end']:
-        new_cols = (
-            drive[time_type + '_time']
-            .str.strip('()')
-            .str.split(',', expand=True)
-        )
-        new_cols.loc[new_cols[0] == 'OT', 0] = 'OT1'
-        ot = (
-            new_cols.loc[new_cols[0].str.startswith('OT'), 0]
-            .str.split('OT')
-            .str[1]
-            .astype(int)
-        ) + 4
-        new_cols.loc[new_cols[0].str.startswith('OT'), 0] = 'Q' + ot.astype(str)
+        drive[time_type + '_quarter'], drive[time_type + '_time'] = process_time_col(drive[time_type + '_time'])
 
-        drive[time_type + '_quarter'] = new_cols[0].str.lstrip('Q').astype(int)
-        drive[time_type + '_time'] = new_cols[1].astype(int)
+    drive = (pd.concat([drive, team_sums], axis=1, join='inner')
+             .reset_index()
+             .set_index(['gsis_id', 'team', 'drive_id'])
+             .sort_index()
+             )
+    drive['offense_score'] = 0
+    drive['defense_score'] = 0
+    for name, row in drive.iterrows():
+        gsis_id, team, drive_id = name
+        scores = score_before_time(connection, gsis_id, row['start_quarter'], row['start_time'])
+        drive.loc[name, 'offense_score'] = scores[team]
+        drive.loc[name, 'defense_score'] = scores[scores.index != team][0]
 
-    return (pd.concat([drive, team_sums], axis=1, join='inner')
-            .reset_index()
-            .set_index(['gsis_id', 'team', 'drive_id'])
-            .sort_index()
-            )
+    return drive
 
 
 def team_stats_by_game(connection, include_preseason=False):

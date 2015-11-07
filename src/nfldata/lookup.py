@@ -3,6 +3,8 @@ from toolz import memoize
 import yaml
 import pandas as pd
 
+from nfldata.common import process_time_col, is_before
+
 
 @memoize
 def gsis_id(connection, season_year, week, team, season_type='Regular', lookup_home=False, lookup_opp=False):
@@ -97,6 +99,102 @@ def player_id(connection, name, pos, team=None):
         ))
 
     return result.iloc[0, 0]
+
+
+def score_before_time(connection, gsis_id_, before_quarter, before_time):
+    play_ids = plays_before_time(connection, gsis_id_, before_quarter, before_time)
+    return _total_score_over_plays(connection, gsis_id_, play_ids)
+
+
+def plays_before_time(connection, gsis_id_, before_quarter, before_time):
+    quarter, time = process_time_col(pd.read_sql_query(
+        """SELECT play_id, time
+            FROM play
+            WHERE gsis_id = %(gsis_id)s
+        """,
+        connection,
+        index_col='play_id',
+        params=dict(gsis_id=gsis_id_),
+    ).sort_index()['time'])
+    return [
+        int(play_id) for play_id in
+        quarter.index[is_before(quarter, time, before_quarter, before_time)]
+    ]
+
+
+def _teams(connection, gsis_id_):
+    return pd.read_sql_query(
+            """SELECT home_team, away_team
+                FROM game
+                WHERE gsis_id = %(gsis_id)s
+            """,
+            connection,
+            params=dict(gsis_id=gsis_id_),
+        ).iloc[0, :].values
+
+
+def _other_team(connection, gsis_id_, team):
+    return (set(_teams(connection, gsis_id_)) - {team}).pop()
+
+
+def _total_score_over_plays(connection, gsis_id_, play_ids):
+    if not len(play_ids):
+        return pd.Series([0, 0], _teams(connection, gsis_id_), name='score')
+
+    offense_pts_by_stat = {
+        'rushing_tds': 6,
+        'passing_tds': 6,
+        'rushing_twoptm': 2,
+        'passing_twoptm': 2,
+        'kicking_fgm': 3,
+        'kicking_xpmade': 1,
+    }
+    defense_pts_by_stat = {
+        'defense_frec_tds': 6,
+        'defense_int_tds': 6,
+        'defense_misc_tds': 6,
+        'defense_safe': 2,
+        'kickret_tds': 6,
+        'puntret_tds': 6,
+    }
+    offense_sql = ' + '.join('{}*SUM({})'.format(points, stat) for stat, points in offense_pts_by_stat.items())
+    defense_sql = ' + '.join('{}*SUM({})'.format(points, stat) for stat, points in defense_pts_by_stat.items())
+
+    offense_scores = pd.read_sql_query(
+        """SELECT pos_team AS team, {} AS score
+            FROM agg_play
+            INNER JOIN play USING(gsis_id, play_id)
+            WHERE gsis_id = %(gsis_id)s
+              AND pos_team != 'UNK'
+              AND play_id IN %(play_ids)s
+            GROUP BY pos_team
+        """.format(offense_sql),
+        connection,
+        params=dict(gsis_id=gsis_id_, play_ids=tuple(play_ids)),
+        index_col='team',
+    ).sort_index()['score']
+    if offense_scores.shape[0] == 1:
+        offense_scores[_other_team(connection, gsis_id_, offense_scores.index[0])] = 0
+
+    defense_scores = pd.read_sql_query(
+        """SELECT pos_team AS team, {} AS score
+            FROM agg_play
+            INNER JOIN play USING(gsis_id, play_id)
+            WHERE gsis_id = %(gsis_id)s
+              AND pos_team != 'UNK'
+              AND play_id IN %(play_ids)s
+            GROUP BY pos_team
+        """.format(defense_sql),
+        connection,
+        params=dict(gsis_id=gsis_id_, play_ids=tuple(play_ids)),
+        index_col='team',
+    )['score']
+    if defense_scores.shape[0] == 1:
+        defense_scores[_other_team(connection, gsis_id_, defense_scores.index[0])] = 0
+
+    defense_scores.index = list(reversed(defense_scores.index))
+    defense_scores = defense_scores.sort_index()
+    return offense_scores + defense_scores
 
 
 @memoize
