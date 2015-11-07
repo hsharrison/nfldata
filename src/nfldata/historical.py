@@ -97,12 +97,12 @@ def player_stats_by_game(connection, include_preseason=False):
 
 def team_stats_by_drive(connection, include_preseason=False):
     sum_columns_sql = ', '.join(_sum_query(col) for col in offense_team_stat_columns)
-    return pd.read_sql_query(
-        """SELECT gsis_id, pos_team AS team, drive_id, result, {}
+    team_sums = pd.read_sql_query(
+        """SELECT gsis_id, drive_id, {}
             FROM drive
             INNER JOIN agg_play USING(gsis_id, drive_id)
             {}
-            GROUP BY gsis_id, pos_team, drive_id, result
+            GROUP BY gsis_id, drive_id
         """.format(
             sum_columns_sql,
             '' if include_preseason else """
@@ -111,8 +111,42 @@ def team_stats_by_drive(connection, include_preseason=False):
             """
         ),
         connection,
-        index_col=['gsis_id', 'team', 'drive_id'],
+        index_col=['gsis_id', 'drive_id'],
     ).sort_index()
+
+    drive = pd.read_sql_table(
+        'drive', connection,
+        index_col=['gsis_id', 'drive_id'],
+    ).sort_index()
+    drive['team'] = drive['pos_team']
+    del drive['pos_team']
+
+    for col in ['start_field', 'end_field', 'pos_time']:
+        drive.loc[~drive[col].isnull(), col] = _de_parenthesize(drive.loc[~drive[col].isnull(), col])
+
+    for time_type in ['start', 'end']:
+        new_cols = (
+            drive[time_type + '_time']
+            .str.strip('()')
+            .str.split(',', expand=True)
+        )
+        new_cols.loc[new_cols[0] == 'OT', 0] = 'OT1'
+        ot = (
+            new_cols.loc[new_cols[0].str.startswith('OT'), 0]
+            .str.split('OT')
+            .str[1]
+            .astype(int)
+        ) + 4
+        new_cols.loc[new_cols[0].str.startswith('OT'), 0] = 'Q' + ot.astype(str)
+
+        drive[time_type + '_quarter'] = new_cols[0].str.lstrip('Q').astype(int)
+        drive[time_type + '_time'] = new_cols[1].astype(int)
+
+    return (pd.concat([drive, team_sums], axis=1, join='inner')
+            .reset_index()
+            .set_index(['gsis_id', 'team', 'drive_id'])
+            .sort_index()
+            )
 
 
 def team_stats_by_game(connection, include_preseason=False):
@@ -170,6 +204,10 @@ def team_stats_by_game(connection, include_preseason=False):
     )
 
     return game_data
+
+
+def _de_parenthesize(series, type_=int):
+    return series.str.strip('()').astype(int)
 
 
 def _sum_query(col):
