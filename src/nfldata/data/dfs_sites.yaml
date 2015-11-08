@@ -1,0 +1,106 @@
+draftkings:
+  position_order:
+    - QB
+    - RB
+    - RB
+    - WR
+    - WR
+    - WR
+    - TE
+    - [RB, WR, TE]
+    - DST
+  name_fixes:
+    Arizona: Cardinals
+    Atlanta: Falcons
+    Baltimore: Ravens
+    Buffalo: Bills
+    Carolina: Panthers
+    Chicago: Bears
+    Cincinnati: Bengals
+    Cleveland: Browns
+    Dallas: Cowboys
+    Denver: Broncos
+    Detroit: Lions
+    Green Bay: Packers
+    Houston: Texans
+    Indianapolis: Colts
+    Jacksonville: Jaguars
+    Kansas City: Chiefs
+    Miami: Dolphins
+    Minnesota: Vikings
+    New England: Patriots
+    New Orleans: Saints
+    New York Giants: Giants
+    New York Jets: Jets
+    Oakland: Raiders
+    Philadelphia: Eagles
+    Pittsburgh: Steelers
+    San Diego: Chargers
+    San Francisco: 49ers
+    Seattle: Seahawks
+    St. Louis: Rams
+    Tampa Bay: Buccaneers
+    Tennessee: Titans
+    Washington: Redskins
+
+    Austin Seferian Jenkins: Austin Seferian-Jenkins
+    Cecil Shorts: Cecil Shorts III
+    Christopher Ivory: Chris Ivory
+    Dorial Green Beckham: Dorial Green-Beckham
+    Duke Johnson: Duke Johnson Jr.
+    E.J. Manuel: EJ Manuel
+    Lesean Mccoy: LeSean McCoy
+    Odell Beckham: Odell Beckham Jr.
+    Philly Brown: Corey Brown
+    Steve Johnson: Stevie Johnson
+    Steve Smith: Steve Smith Sr.
+
+fanduel:
+  position_order:
+    - QB
+    - RB
+    - RB
+    - WR
+    - WR
+    - WR
+    - TE
+    - K
+    - DST
+  name_fixes:
+    Arizona: Arizona Cardinals
+    Atlanta: Atlanta Falcons
+    Baltimore: Baltimore Ravens
+    Buffalo: Buffalo Bills
+    Carolina: Carolina Panthers
+    Chicago: Chicago Bears
+    Cincinnati: Cincinnati Bengals
+    Cleveland: Cleveland Browns
+    Dallas: Dallas Cowboys
+    Denver: Denver Broncos
+    Detroit: Detroit Lions
+    Green Bay: Green Bay Packers
+    Houston: Houston Texans
+    Indianapolis: Indianapolis Colts
+    Jacksonville: Jacksonville Jaguars
+    Kansas City: Kansas City Chiefs
+    Miami: Miami Dolphins
+    Minnesota: Minnesota Vikings
+    New England: New England Patriots
+    New Orleans: New Orleans Saints
+    New York Giants: New York Giants
+    New York Jets: New York Jets
+    Oakland: Oakland Raiders
+    Philadelphia: Philadelphia Eagles
+    Pittsburgh: Pittsburgh Steelers
+    San Diego: San Diego Chargers
+    San Francisco: San Francisco 49ers
+    Seattle: Seattle Seahawks
+    St. Louis: St Louis Rams
+    Tampa Bay: Tampa Bay Buccaneers
+    Tennessee: Tennessee Titans
+    Washington: Washington Redskins
+
+    Chris Ivory: Christopher Ivory
+    Dorial Green Beckham: Dorial Green-Beckham
+    Lesean McCoy: LeSean McCoy
+    Odell Beckham: Odell Beckham Jr.
