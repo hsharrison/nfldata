@@ -15,6 +15,7 @@ fg3039: kicking_fgm_30_39
 fg4049: kicking_fgm_40_49
 fg50: kicking_fgm_50p
 fgatt: kicking_fga
+fgm: kicking_fgm
 fgmiss: kicking_fgmissed
 fga: kicking_fga
 fpts: projected_fp
