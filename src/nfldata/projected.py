@@ -65,7 +65,10 @@ def sanitize(connection, df, idp=False, source=''):
             'kicking_fgm_50p',
         ], axis=1)
 
-    df = pd.concat([df, df.apply(_id_from_row(connection, lookup_home=True, lookup_opp=True), axis=1)], axis=1)
+    df = pd.concat([
+        df,
+        df.apply(_id_from_row(connection, lookup_home='home' not in df, lookup_opp='opp' not in df), axis=1)
+    ], axis=1)
     df['player_id'] = [lookup.player_id(connection, row['name'], row['pos'], team=row['team'])
                        for _, row in df.iterrows()]
 
