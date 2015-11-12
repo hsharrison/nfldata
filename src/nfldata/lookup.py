@@ -209,5 +209,6 @@ def _get_hardcoded_player_ids():
         canonical = team_variations[0]
         for variation in team_variations:
             hardcoded_ids[variation, 'DST'] = canonical
+            hardcoded_ids[variation + ' Defense', 'DST'] = canonical
 
     return hardcoded_ids
