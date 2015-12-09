@@ -33,6 +33,7 @@ class DFSSite:
 @curry
 def matches_pos(pos, player):
     player_pos = player[1]
-    if isinstance(pos, set):
-        return player_pos in pos
-    return player_pos == pos
+
+    if isinstance(pos, str):
+        return player_pos == pos
+    return player_pos in pos
