@@ -1,4 +1,5 @@
 draftkings:
+  salary_cap: 50000
   roster_slots:
     - QB
     - RB
@@ -56,6 +57,7 @@ draftkings:
     Steve Smith: Steve Smith Sr.
 
 fanduel:
+  salary_cap: 60000
   roster_slots:
     - QB
     - RB
