@@ -24,7 +24,6 @@ setup(
         'numpy>=1.10',
         'pandas',
         'pyyaml',
-        'psycopg2',
         'sqlalchemy',
     ],
 
